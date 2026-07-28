@@ -125,7 +125,8 @@ fun HomeScreen(viewModel: TabungKuViewModel) {
                 onDismiss = { showSettings = false },
                 userProfile = userProfile,
                 onSaveProfile = { name, uri -> viewModel.updateProfile(name, uri) },
-                onSaveAiSettings = { provider, key, model -> viewModel.updateAiSettings(provider, key, model) }
+                onSaveAiSettings = { provider, key -> viewModel.updateAiSettings(provider, key) },
+                onVerifyAiKey = { provider, key -> viewModel.verifyAiKey(provider, key) }
             )
         }
         

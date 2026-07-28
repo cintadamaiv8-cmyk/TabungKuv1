@@ -42,6 +42,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -64,16 +66,22 @@ fun SettingsBottomSheet(
     onDismiss: () -> Unit,
     userProfile: UserProfile?,
     onSaveProfile: (String, String?) -> Unit,
-    onSaveAiSettings: (String, String, String) -> Unit
+    onSaveAiSettings: (String, String) -> Unit,
+    onVerifyAiKey: suspend (String, String) -> Pair<Boolean, String>
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val scope = rememberCoroutineScope()
+    
     var nameInput by remember { mutableStateOf(userProfile?.name ?: "") }
     // User profile photo state
     var photoUriInput by remember { mutableStateOf<Uri?>(userProfile?.photoUri?.let { Uri.parse(it) }) }
     
     var aiProvider by remember { mutableStateOf(userProfile?.aiProvider ?: "Gemini") }
     var apiKeyInput by remember { mutableStateOf(userProfile?.aiApiKey ?: "") }
-    var aiModelInput by remember { mutableStateOf(userProfile?.aiModel ?: "") }
+    
+    var isVerifying by remember { mutableStateOf(false) }
+    var verificationMessage by remember { mutableStateOf<String?>(null) }
+    var isVerificationSuccess by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
     val launcher = rememberLauncherForActivityResult(contract = ActivityResultContracts.OpenDocument()) { uri: Uri? ->
@@ -194,7 +202,7 @@ fun SettingsBottomSheet(
                     
                     OutlinedTextField(
                         value = apiKeyInput,
-                        onValueChange = { apiKeyInput = it },
+                        onValueChange = { apiKeyInput = it; verificationMessage = null },
                         label = { Text("API Key") },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
@@ -205,20 +213,15 @@ fun SettingsBottomSheet(
                         )
                     )
                     
-                    Spacer(modifier = Modifier.height(12.dp))
-                    
-                    OutlinedTextField(
-                        value = aiModelInput,
-                        onValueChange = { aiModelInput = it },
-                        label = { Text("Model AI (opsional)") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = EmeraldNeon,
-                            focusedLabelColor = EmeraldNeon,
-                            cursorColor = EmeraldNeon
+                    if (verificationMessage != null) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = verificationMessage ?: "",
+                            color = if (isVerificationSuccess) EmeraldNeon else MaterialTheme.colorScheme.error,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium
                         )
-                    )
+                    }
                 }
             }
             
@@ -285,16 +288,27 @@ fun SettingsBottomSheet(
             Button(
                 onClick = {
                     onSaveProfile(nameInput, photoUriInput?.toString())
-                    onSaveAiSettings(aiProvider, apiKeyInput, aiModelInput)
-                    onDismiss()
+                    isVerifying = true
+                    verificationMessage = null
+                    scope.launch {
+                        val (success, message) = onVerifyAiKey(aiProvider, apiKeyInput)
+                        isVerifying = false
+                        isVerificationSuccess = success
+                        verificationMessage = message
+                        if (success) {
+                            onSaveAiSettings(aiProvider, apiKeyInput)
+                        }
+                    }
                 },
                 modifier = Modifier.fillMaxWidth(),
+                enabled = !isVerifying,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = EmeraldNeon,
-                    contentColor = MaterialTheme.colorScheme.background
+                    contentColor = MaterialTheme.colorScheme.background,
+                    disabledContainerColor = EmeraldNeon.copy(alpha = 0.5f)
                 )
             ) {
-                Text("Simpan Pengaturan")
+                Text(if (isVerifying) "Memverifikasi..." else "Verifikasi & Simpan")
             }
         }
     }

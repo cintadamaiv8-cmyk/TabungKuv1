@@ -79,45 +79,13 @@ fun BannerCarousel(modifier: Modifier = Modifier) {
                         modifier = Modifier.fillMaxSize()
                     )
                     
-                    // Gradient Overlay
+                    // Pager indicators
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .background(
-                                Brush.horizontalGradient(
-                                    colors = listOf(
-                                        com.example.ui.theme.Emerald900.copy(alpha = 0.9f),
-                                        com.example.ui.theme.Zinc900.copy(alpha = 0.8f)
-                                    )
-                                )
-                            )
-                    )
-                    
-                    // Content
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(20.dp),
-                        verticalArrangement = Arrangement.Bottom
+                            .padding(12.dp),
+                        contentAlignment = Alignment.BottomCenter
                     ) {
-                        Text(
-                            text = "PROMO EKSKLUSIF",
-                            color = com.example.ui.theme.Emerald400,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            letterSpacing = 2.sp
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = "Wujudkan Impianmu\nMulai Menabung Hari Ini",
-                            color = Color.White,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            lineHeight = 22.sp
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
-                        
-                        // Pager indicators
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(6.dp),
                             verticalAlignment = Alignment.CenterVertically
@@ -131,7 +99,7 @@ fun BannerCarousel(modifier: Modifier = Modifier) {
                                         .clip(RoundedCornerShape(50))
                                         .background(
                                             if (isSelected) com.example.ui.theme.Emerald500
-                                            else com.example.ui.theme.Emerald900
+                                            else com.example.ui.theme.Emerald900.copy(alpha = 0.5f)
                                         )
                                 )
                             }

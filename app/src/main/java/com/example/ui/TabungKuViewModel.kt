@@ -51,10 +51,33 @@ class TabungKuViewModel(private val repository: TabungKuRepository) : ViewModel(
         }
     }
 
-    fun updateAiSettings(provider: String, apiKey: String, model: String) {
+    fun updateAiSettings(provider: String, apiKey: String) {
         viewModelScope.launch {
             val current = userProfile.value ?: UserProfile()
-            repository.saveUserProfile(current.copy(aiProvider = provider, aiApiKey = apiKey, aiModel = model))
+            repository.saveUserProfile(current.copy(aiProvider = provider, aiApiKey = apiKey, aiModel = ""))
+        }
+    }
+
+    suspend fun verifyAiKey(provider: String, apiKey: String): Pair<Boolean, String> = withContext(Dispatchers.IO) {
+        if (apiKey.isBlank() || apiKey == "MY_GEMINI_API_KEY") {
+            return@withContext Pair(false, "API Key tidak boleh kosong")
+        }
+        try {
+            if (provider == "Groq") {
+                val request = com.example.network.GroqRequest(
+                    model = "llama-3.1-8b-instant",
+                    messages = listOf(com.example.network.GroqMessage(role = "user", content = "Test"))
+                )
+                com.example.network.GroqRetrofitClient.service.generateContent("Bearer $apiKey", request)
+            } else {
+                val request = GenerateContentRequest(
+                    contents = listOf(Content(parts = listOf(Part(text = "Test"))))
+                )
+                RetrofitClient.service.generateContent(apiKey, request)
+            }
+            Pair(true, "🟢 Siap Digunakan")
+        } catch (e: Exception) {
+            Pair(false, "API Key tidak valid atau error jaringan")
         }
     }
 
